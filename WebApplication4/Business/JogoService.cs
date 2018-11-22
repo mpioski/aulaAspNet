@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using WebApplication4.Data;
 using WebApplication4.Models;
@@ -55,8 +56,9 @@ namespace WebApplication4.Business
         {
             List<MesaUsuario> mesasUsuarios =
                 _context.MesasUsuarios
-                .Include(mu => mu.Mesa)
-                .Include(mu => mu.Usuario)
+                .Include(mu => mu.Mesa) // mesas do usuarioId
+                .ThenInclude(m => m.MesasUsuarios) // os usuários na mesa
+                .ThenInclude(mu2 => mu2.Usuario) // nomes dos usuários
                 .Where(mu => mu.UsuarioId == usuarioId).ToList();
             List<Mesa> mesas = new List<Mesa>();
             foreach(MesaUsuario mu in mesasUsuarios)
@@ -76,13 +78,90 @@ namespace WebApplication4.Business
             _context.MesasUsuarios.Add(mesaUsuario);
             _context.SaveChanges();
         }
+        public void EntrarMesa(int usuarioId, int mesaId)
+        {
+            int count = _context.MesasUsuarios
+                .Where(m1 => m1.UsuarioId == usuarioId &&
+                        m1.MesaId == mesaId).Count();
+            if (count > 0)
+            {
+                throw new JaEstaNaMesaException();
+            }
+            count = _context.MesasUsuarios
+                .Where(m1 => m1.MesaId == mesaId).Count();
+            if (count >= 2)
+            {
+                throw new MesaCheiaException();
+            }
+            MesaUsuario mu = new MesaUsuario {
+                MesaId = mesaId,
+                UsuarioId = usuarioId
+            };
+            _context.MesasUsuarios.Add(mu);
+            _context.SaveChanges();
+        }
+        public void SalvarEstadoMesa(int mesaId,
+            string estado, string historico)
+        {
+            Mesa mesa = new Mesa
+            {
+                MesaId = mesaId,
+                Estado = estado,
+                Historico = historico
+            };
+            _context.Attach(mesa);
+            _context.Entry(mesa).Property(m => m.Historico).IsModified = true;
+            _context.Entry(mesa).Property(m => m.Estado).IsModified = true;
+            _context.SaveChanges();
+        }
     }
+
+    [Serializable]
+    internal class MesaCheiaException : Exception
+    {
+        public MesaCheiaException()
+        {
+        }
+
+        public MesaCheiaException(string message) : base(message)
+        {
+        }
+
+        public MesaCheiaException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected MesaCheiaException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+    }
+
+    [Serializable]
+    internal class JaEstaNaMesaException : Exception
+    {
+        public JaEstaNaMesaException()
+        {
+        }
+
+        public JaEstaNaMesaException(string message) : base(message)
+        {
+        }
+
+        public JaEstaNaMesaException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected JaEstaNaMesaException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+    }
+
     public interface IJogoService
     {
         List<Mesa> ListarMesa(int usuarioId);
         List<Mesa> ListarMesasDoUsuario(string cpf);
         List<Mesa> ListarMesasDoUsuarioPeloNome(string nome);
-
+        void EntrarMesa(int usuarioId, int mesaId);
         void MontarMesa(string nome, int usuarioId);
     }
 }

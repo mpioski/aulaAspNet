@@ -1,5 +1,5 @@
 ﻿@page
-@using WebApplication4.Data; // Mesa, MesaUsuario, Usuario
+@using WebApplication4.Data; @* Mesa, MesaUsuario, Usuario *@
 
 @model WebApplication4.Pages.Mesas.MinhasMesasModel
 @{
@@ -35,6 +35,9 @@
                         }
                         @mu.Usuario.Nome
                     }
+                </td>
+                <td>
+                    <button>Jogar</button>
                 </td>
             </tr>
         }
