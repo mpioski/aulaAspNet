@@ -12,35 +12,38 @@
         <input type="text" asp-for="NomeMesa" />
         <span asp-validation-for="NomeMesa"
                      class="text-danger"></span>
-        <button>Criar Nova</button>
+        <button asp-page-handler="Criar">Criar Nova</button>
     </form>
 </div>
-
-<table class="table table-hover">
-    <thead>
+<form method="post">
+    <table class="table table-hover">
+        <thead>
         <th>Nome</th>
         <th>Usuários</th>
-    </thead>
-    <tbody>
-        @foreach(Mesa mesa in Model.mesas)
-        {
-            <tr>
-                <td>@mesa.Nome</td>
-                <td>
-                    @foreach(MesaUsuario mu in mesa.MesasUsuarios)
-                    {
-                        @if (mesa.MesasUsuarios.First() != mu)
+        </thead>
+        <tbody>
+            @foreach (Mesa mesa in Model.mesas)
+            {
+                <tr>
+                    <td>@mesa.Nome</td>
+                    <td>
+                        @foreach (MesaUsuario mu in mesa.MesasUsuarios)
                         {
-                            @:,
+                            @if (mesa.MesasUsuarios.First() != mu)
+                            {
+                                @:,
+                            }
+                            @mu.Usuario.Nome
                         }
-                        @mu.Usuario.Nome
-                    }
-                </td>
-                <td>
-                    <button>Jogar</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
+                    </td>
+                    <td>
+                        <button asp-page-handler="Jogar"
+                                name="mesaId" value="@mesa.MesaId">
+                        Jogar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</form>

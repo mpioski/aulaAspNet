@@ -114,6 +114,34 @@ namespace WebApplication4.Business
             _context.Entry(mesa).Property(m => m.Estado).IsModified = true;
             _context.SaveChanges();
         }
+        public void SalvarEstadoMesa(int mesaId,
+            string config,
+            string estado, string historico)
+        {
+            Mesa mesa = new Mesa
+            {
+                MesaId = mesaId,
+                Estado = estado,
+                Historico = historico,
+                Configuracao = config
+            };
+            _context.Attach(mesa);
+            _context.Entry(mesa).Property(m => m.Historico).IsModified = true;
+            _context.Entry(mesa).Property(m => m.Estado).IsModified = true;
+            _context.Entry(mesa).Property(m => m.Configuracao).IsModified = true;
+            _context.SaveChanges();
+        }
+        public void SalvarEstadoMesa()
+        {
+            _context.SaveChanges();
+        }
+        public Mesa DadosMesa(int mesaId)
+        {
+            return _context.Mesas
+                .Include(m => m.MesasUsuarios)
+                .ThenInclude(mu => mu.Usuario)
+                .Where(m => m.MesaId == mesaId).FirstOrDefault();
+        }
     }
 
     [Serializable]
@@ -163,5 +191,10 @@ namespace WebApplication4.Business
         List<Mesa> ListarMesasDoUsuarioPeloNome(string nome);
         void EntrarMesa(int usuarioId, int mesaId);
         void MontarMesa(string nome, int usuarioId);
+        Mesa DadosMesa(int mesaId);
+        void SalvarEstadoMesa(int mesaId,
+            string config,
+            string estado, string historico);
+        void SalvarEstadoMesa();
     }
 }

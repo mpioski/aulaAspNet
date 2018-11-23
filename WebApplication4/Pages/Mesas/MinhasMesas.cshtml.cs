@@ -32,7 +32,7 @@ namespace WebApplication4.Pages.Mesas
             }
             mesas = _jogoService.ListarMesa(usuarioId??0);
         }
-        public void OnPost()
+        public void OnPostCriar()
         {
             if (ModelState.IsValid)
             {
@@ -45,6 +45,20 @@ namespace WebApplication4.Pages.Mesas
                 _jogoService.MontarMesa(NomeMesa, usuarioId ?? 0);
                 mesas = _jogoService.ListarMesa(usuarioId ?? 0);
             }
+        }
+        public ActionResult OnPostJogar(int mesaId)
+        {
+            int? usuarioId = HttpContext.Session.GetInt32("usuarioId");
+            if (!usuarioId.HasValue)
+            {
+                throw new Exception("Erro de permissão");
+            }
+            if (_jogoService.DadosMesa(mesaId) == null)
+            {
+                throw new Exception("Mesa inexistente");
+            }
+            //return RedirectToPage("MesaChess?MesaId=" + mesaId);
+            return RedirectToPage("MesaChess", new { MesaId = mesaId});
         }
     }
 }
