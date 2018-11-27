@@ -9,17 +9,21 @@
 <h2>MinhasMesas</h2>
 <div class="card card-body">
     <form method="post">
-        <input type="text" asp-for="NomeMesa" />
-        <span asp-validation-for="NomeMesa"
-                     class="text-danger"></span>
-        <button asp-page-handler="Criar">Criar Nova</button>
+        <div class="form-group">
+            <label for="NomeMesa">Nome da mesa</label>
+            <input type="text" id="NomeMesa" />
+            <span asp-validation-for="NomeMesa"
+                  class="text-danger"></span>
+        </div>
+        <button type="button" onclick="criarMesa()" class="btn btn-sm">Criar Nova</button>
     </form>
 </div>
-<form method="post">
+<form method="post" id="formMesas">
     <table class="table table-hover">
         <thead>
         <th>Nome</th>
         <th>Usuários</th>
+        <th></th>
         </thead>
         <tbody>
             @foreach (Mesa mesa in Model.mesas)
@@ -37,13 +41,89 @@
                         }
                     </td>
                     <td>
-                        <button asp-page-handler="Jogar"
-                                name="mesaId" value="@mesa.MesaId">
-                        Jogar
+                        <button asp-page-handler="Jogar" class="btn btn-sm" name="mesaId" value="@mesa.MesaId">
+                            Jogar
                         </button>
+                        <button type="button" onclick="sairMesa(@mesa.MesaId)" class="btn btn-primary btn-sm">Sair</button>
+                        <button type="button" onclick="excluirMesa(@mesa.MesaId)" class="btn btn-primary btn-sm">Excluir</button>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 </form>
+@section Scripts {
+    <script>
+        function criarMesa() {
+            // requisita a criação de mesa chamando a url https://xxxx:123/api/MinhasMesas
+            // a requisição é do tipo POST
+            // o dado mesaId é enviado no corpo da mensagem no formato JSON
+            // { "Nome" : "Nome da Mesa" }
+            // A resposta é tratada como um objeto contendo a propriedade resp
+            // { resp : "Ok"}
+            let nome = $('#NomeMesa').val();
+            $.ajax({
+                type: 'POST',
+                accepts: 'application/json',
+                url: '/api/MinhasMesas',
+                contentType: 'application/json',
+                data: JSON.stringify({ Nome: nome }),
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert(xhr.statusText);
+                },
+                success: function (data) {
+                    if (data && data.resp) {
+                        alert(data.resp);
+                        // após a criação carrega a tabela de mesas
+                        $('#formMesas').load('/mesas/ListaMinhasMesas');
+                    } else {
+                        alert('Ocorreu um erro de comunicação');
+                    }
+                }
+            });
+        }
+        function sairMesa(mesaId) {
+            let nome = $('#NomeMesa').val();
+            // requisita sair da mesa usando POST
+            // o dado MesaId é enviado no corpo da mensagem no formato www-form-urlencoded
+            // $.form() sempre envia no formato www-form-urlencoded (simulando um post de um formulário HTML)
+            // MesaId=123
+            // A resposta é tratada como um objeto contendo a propriedade resp
+            // { resp : "Ok"}
+            $.post('/api/MinhasMesas/sair', { mesaId: mesaId })
+                .done(function (data) {
+                    if (data && data.resp) {
+                        alert(data.resp);
+                        // após a criação carrega a tabela de mesas
+                        $('#formMesas').load('/mesas/ListaMinhasMesas');
+                    } else {
+                        alert('Ocorreu um erro de comunicação');
+                    }
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
+                    alert(xhr.statusText);
+                });
+        }
+        function excluirMesa(mesaId) {
+            // requisita excluir a mesa usando POST
+            // o dado MesaId é enviado no corpo da mensagem no formato www-form-urlencoded
+            // $.form() sempre envia no formato www-form-urlencoded (simulando um post de um formulário HTML)
+            // MesaId=123
+            // A resposta é tratada como um objeto contendo a propriedade resp
+            // { resp : "Ok"}
+            $.post('/api/MinhasMesas/excluir', { mesaId: mesaId })
+                .done(function (data) {
+                    if (data && data.resp) {
+                        alert(data.resp);
+                        // após a criação carrega a tabela de mesas
+                        $('#formMesas').load('/mesas/ListaMinhasMesas');
+                    } else {
+                        alert('Ocorreu um erro de comunicação');
+                    }
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
+                    alert(xhr.statusText);
+                });
+        }
+    </script>
+}

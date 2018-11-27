@@ -142,6 +142,101 @@ namespace WebApplication4.Business
                 .ThenInclude(mu => mu.Usuario)
                 .Where(m => m.MesaId == mesaId).FirstOrDefault();
         }
+                /// <summary>
+        /// Remove o usuário da mesa e excluir seu estado atual
+        /// </summary>
+        /// <param name="usuarioId"></param>
+        /// <param name="mesaId"></param>
+        public void SairMesa(int usuarioId, int mesaId)
+        {
+            MesaUsuario mu = _context.MesasUsuarios
+                .Include(mu1 => mu1.Mesa)
+                .ThenInclude(m => m.MesasUsuarios)
+                .Where(mu1 => mu1.UsuarioId == usuarioId && mu1.MesaId == mesaId).FirstOrDefault();
+            if (mu != null)
+            {
+                if (mu.Mesa.MesasUsuarios.Count < 2)
+                {
+                    // se só tem este jogador na mesa, então exclui a mesa
+                    _context.Mesas.Remove(mu.Mesa);
+                }
+                else
+                {
+                    // caso contrário, zera o estado da mesa
+                    mu.Mesa.Historico = "";
+                    mu.Mesa.Estado = "";
+                    mu.Mesa.Configuracao = "";
+                }
+                _context.MesasUsuarios.Remove(mu);
+                _context.SaveChanges();
+                return;
+            }
+            else
+            {
+                throw new UsuarioNaoEstaNaMesa();
+            }
+        }
+        /// <summary>
+        /// Exclui uma mesa
+        /// </summary>
+        /// <param name="mesaId"></param>
+        public void ExcluirMesa(int mesaId)
+        {
+            Mesa mesa = _context.Mesas.Include(m=>m.MesasUsuarios).Where(m => m.MesaId == mesaId).FirstOrDefault();
+            if (mesa != null)
+            {
+                _context.Mesas.Remove(mesa);
+                foreach (MesaUsuario um in mesa.MesasUsuarios)
+                {
+                     _context.MesasUsuarios.Remove(um);
+                }
+                _context.SaveChanges();
+            }
+            else
+            {
+                throw new MesaInexistente();
+            }
+        }
+    }
+
+    [Serializable]
+    internal class MesaInexistente : Exception
+    {
+        public MesaInexistente()
+        {
+        }
+
+        public MesaInexistente(string message) : base(message)
+        {
+        }
+
+        public MesaInexistente(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected MesaInexistente(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+    }
+
+    [Serializable]
+    internal class UsuarioNaoEstaNaMesa : Exception
+    {
+        public UsuarioNaoEstaNaMesa()
+        {
+        }
+
+        public UsuarioNaoEstaNaMesa(string message) : base(message)
+        {
+        }
+
+        public UsuarioNaoEstaNaMesa(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected UsuarioNaoEstaNaMesa(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
     }
 
     [Serializable]
@@ -196,5 +291,7 @@ namespace WebApplication4.Business
             string config,
             string estado, string historico);
         void SalvarEstadoMesa();
+        void SairMesa(int usuarioId, int mesaId);
+        void ExcluirMesa(int mesaId);
     }
 }

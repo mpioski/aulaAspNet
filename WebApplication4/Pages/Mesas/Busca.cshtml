@@ -6,47 +6,58 @@
     ViewData["Title"] = "Busca";
 }
 <h2>Busca</h2>
-<div asp-validation-summary="ModelOnly"></div>
-<form method="post">
+<form method="post" id="formulario">
     <div class="form-group">
-        <label asp-for="Cpf">Cpf do Usuário</label>
-        <input type="text" asp-for="Cpf" class="form-control" />
-        <span asp-validation-for="Cpf" class="text-danger"></span>
+        <label>Cpf do Usuário</label>
+        <input type="text" name="Cpf" class="form-control" />
     </div>
     <div class="form-group">
-        <label asp-for="NomeUsuario">Nome do Usuário</label>
-        <input type="text" asp-for="NomeUsuario" class="form-control" />
-        <span asp-validation-for="NomeUsuario" class="text-danger"></span>
+        <label>Nome do Usuário</label>
+        <input type="text" name="NomeUsuario" class="form-control" />
     </div>
-    <button asp-page-handler="Buscar" class="btn btn-primary">Buscar</button>
+    <button type="button" onclick="buscar()" class="btn btn-primary btn-sm">Buscar</button>
 </form>
-<form method="post">
-    <input type="hidden" asp-for="Cpf" />
-    <input type="hidden" asp-for="NomeUsuario" />
-    <table class="table table-hover">
-        <thead>
-        <th>Nome</th>
-        <th>Usuários</th>
-        <th></th>
-        </thead>
-        <tbody>
-            @foreach (Mesa mesa in Model.mesas)
-            {
-                <tr>
-                    <td>@mesa.Nome</td>
-                    <td>
-                        @foreach (MesaUsuario mu in mesa.MesasUsuarios)
-                        {
-                            @if (mesa.MesasUsuarios.First() != mu)
-                            {
-                                @:,
-                            }
-                            @mu.Usuario.Nome
-                        }
-                    </td>
-                    <td><button asp-page-handler="Entrar" name="mesaId" value="@mesa.MesaId" class="btn">Entrar</button></td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</form>
+<form method="post" id="lista"></form>
+@section Scripts {
+    <script>
+        function buscar() {
+            // requisita a lista de mesas usando POST
+            // os dados CPF e NomeUsuario são enviados no corpo da mensagem no formato www-form-urlencoded
+            // $.form() sempre envia no formato www-form-urlencoded (simulando um post de um formulário HTML)
+            // Cpf=123123&NomeUsuario=Jose
+            $.post('ListaBusca', $('#formulario').serialize(), function (resp) {
+                // coloca a resposta no elemento de id = lista (que é o <form>)
+                $('#lista').html(resp);
+            });
+        }
+        function entrar(mesaId) {
+            // requisita a entrada na mesa chamando a url https://xxxx:123/api/Busca
+            // a requisição é do tipo POST
+            // o dado mesaId é enviado no corpo da mensagem no formato JSON
+            // { "MesaId" : 1234 }
+            // A resposta é tratada como um objeto contendo as propriedades status, mensagem e url
+            // { status : 0, url : "/Mesas/MinhasMesas", mensagem : "Ok"}
+            $.ajax({
+                type: 'POST',
+                accepts: 'application/json',
+                url: '/api/Busca',
+                contentType: 'application/json',
+                data: JSON.stringify({ MesaId: mesaId }),
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert(xhr.statusText);
+                },
+                success: function (resp) {
+                    if (resp.status == 0) { // ok
+                        alert('Ok. Usuário entrou na mesa.');
+                        document.location.href = resp.url;
+                    } else if (resp.status) {
+                        alert(resp.status + ' - ' + resp.mensagem);
+                    } else {
+                        alert('Erro de comunicação');
+                        console.log(resp);
+                    }
+                }
+            });
+        }
+    </script>
+}
