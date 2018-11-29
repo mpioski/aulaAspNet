@@ -19,12 +19,14 @@ namespace WebApplication4
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
             Configuration = configuration;
+            CurrentEnvironment = env;
         }
 
         public IConfiguration Configuration { get; }
+        private IHostingEnvironment CurrentEnvironment { get; set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -36,15 +38,49 @@ namespace WebApplication4
             services.AddMemoryCache();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-            services.AddDbContext<WebApplication4Context>(options =>
+            if (CurrentEnvironment.IsDevelopment())
+            {
+                services.AddDbContext<WebApplication4Context>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("WebApplication4Context")));
+            }
+            else
+            {
+                // staging e production
+                // Heroku fornece uma connection URL para PostgreSQL via variável de ambiente
+                var connUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+                // Como essa url de conexão é feita para o driver JDBC, precisamos quebrar a URL em pedaços
+                connUrl = connUrl.Replace("postgres://", string.Empty);
+
+                var pgUserPass = connUrl.Split("@")[0];
+                var pgHostPortDb = connUrl.Split("@")[1];
+                var pgHostPort = pgHostPortDb.Split("/")[0];
+
+                var pgDb = pgHostPortDb.Split("/")[1];
+                var pgUser = pgUserPass.Split(":")[0];
+                var pgPass = pgUserPass.Split(":")[1];
+                var pgHost = pgHostPort.Split(":")[0];
+                var pgPort = pgHostPort.Split(":")[1];
+                // Depois de quebrar, precismos remontar no formato connection string
+                string connStr = $"Server={pgHost};Port={pgPort};User Id={pgUser};Password={pgPass};Database={pgDb}";
+                services.AddDbContext<WebApplication4Context>(options =>
+                            options.UseNpgsql(connStr));
+            }
             services.AddScoped<IJogoService, JogoService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            using (var serviceScope = app.ApplicationServices
+                .GetRequiredService<IServiceScopeFactory>()
+                .CreateScope())
+            {
+                using (var context = serviceScope.ServiceProvider.GetService<WebApplication4Context>())
+                {
+                    context.Database.Migrate();
+                }
+            }
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
