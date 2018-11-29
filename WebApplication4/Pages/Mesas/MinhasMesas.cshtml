@@ -63,6 +63,8 @@
             // { "Nome" : "Nome da Mesa" }
             // A resposta é tratada como um objeto contendo a propriedade resp
             // { resp : "Ok"}
+            // http://kkkk:123/api/MinhasMesas
+            // {Nome : "mesa 2"}
             let nome = $('#NomeMesa').val();
             $.ajax({
                 type: 'POST',
@@ -94,6 +96,7 @@
             // { resp : "Ok"}
             $.post('/api/MinhasMesas/sair', { mesaId: mesaId })
                 .done(function (data) {
+                    // data é um objeto {resp:"Ok"}
                     if (data && data.resp) {
                         alert(data.resp);
                         // após a criação carrega a tabela de mesas
