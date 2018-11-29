@@ -8,7 +8,7 @@ using WebApplication4.Business;
 
 namespace WebApplication4.Controllers
 {
-    [Route("api/MinhasMesas")]
+    [Route("api/[controller]")]
     [ApiController]
     public class MinhasMesasController : ControllerBase
     {
@@ -17,35 +17,66 @@ namespace WebApplication4.Controllers
         {
             _jogoService = jogoService;
         }
-        // http://kkkk:123/api/MinhasMesas
-        // {Nome : "mesa 2"}
         [HttpPost]
-        public ActionResult CriarMesa(CriarMesaReq req)
+        public ActionResult Criar(CriarMesaReq req)
         {
-            int? usuarioId = HttpContext.Session.GetInt32("usuarioId");
+            int? usuarioId =
+               HttpContext.Session.GetInt32("usuarioId");
             if (!usuarioId.HasValue)
             {
-                return Unauthorized(); // erro HTTP 401
+                return Unauthorized();
             }
-            _jogoService.MontarMesa(req.Nome, usuarioId??0);
+            if (req.Nome == null || req.Nome.Length == 0)
+            {
+                return BadRequest("Nome deve ser preenchido");
+            }
+            _jogoService.MontarMesa(req.Nome, usuarioId ?? 0);
             return Ok(new { resp = "Ok" });
         }
-        // POST http://localhost:123/api/MinhasMesas/sair
-        // mesaId=123
         [HttpPost("sair")]
-        public IActionResult SairMesa([FromForm] int mesaId)
+        public ActionResult Sair([FromForm]int mesaId)
         {
-            int? usuarioId = HttpContext.Session.GetInt32("usuarioId");
+            int? usuarioId =
+               HttpContext.Session.GetInt32("usuarioId");
             if (!usuarioId.HasValue)
             {
-                return Unauthorized(); // erro HTTP 401
+                return Unauthorized();
             }
             if (mesaId == 0)
             {
-                return BadRequest("Id da mesa é inválido");
+                return BadRequest("Id da Mesa é inválido");
             }
-            _jogoService.SairMesa(usuarioId ?? 0, mesaId);
-            // {resp:"Ok"}
+            try
+            {
+                _jogoService.SairMesa(usuarioId ?? 0, mesaId);
+            }
+            catch( UsuarioNaoEstaNaMesa e)
+            {
+                return BadRequest("Usuário não está na mesa");
+            }
+            return Ok(new { resp = "Ok" });
+        }
+        [HttpPost("excluir")]
+        public ActionResult Excluir([FromForm]int mesaId)
+        {
+            int? usuarioId =
+               HttpContext.Session.GetInt32("usuarioId");
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized();
+            }
+            if (mesaId == 0)
+            {
+                return BadRequest("Id da Mesa é inválido");
+            }
+            try
+            {
+                _jogoService.ExcluirMesa(mesaId);
+            }
+            catch (MesaInexistente e)
+            {
+                return BadRequest("Mesa inexistente");
+            }
             return Ok(new { resp = "Ok" });
         }
     }

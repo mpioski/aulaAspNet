@@ -17,6 +17,37 @@ namespace WebApplication4.Controllers
         {
             _jogoService = jogoService;
         }
+        [HttpPost]
+        public ActionResult<EntrarMesaResp> Entrar(EntrarMesaReq req)
+        {
+            int? usuarioId =
+                HttpContext.Session.GetInt32("usuarioId");
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized();
+            }
+            EntrarMesaResp resp = new EntrarMesaResp
+            {
+                Status = 0,
+                Mensagem = "",
+                Url = "/Mesas/MinhasMesas"
+            };
+            try
+            {
+                _jogoService.EntrarMesa(usuarioId ?? 0, req.MesaId);
+            }
+            catch (JaEstaNaMesaException e)
+            {
+                resp.Status = 1;
+                resp.Mensagem = "Usuário já está na mesa";
+            }
+            catch (MesaCheiaException e)
+            {
+                resp.Status = 2;
+                resp.Mensagem = "A mesa está cheia";
+            }
+            return resp;
+        }
     }
     public class EntrarMesaReq
     {
