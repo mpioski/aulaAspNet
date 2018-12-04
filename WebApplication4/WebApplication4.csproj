@@ -7,6 +7,8 @@
   <ItemGroup>
     <Compile Remove="Migrations\20181023224808_criarbasedados.cs" />
     <Compile Remove="Migrations\20181023224808_criarbasedados.Designer.cs" />
+    <Compile Remove="Migrations\20181204221229_CriarTipoJogo.cs" />
+    <Compile Remove="Migrations\20181204221229_CriarTipoJogo.Designer.cs" />
     <Compile Remove="Pages\Shared\_Menu.cshtml.cs" />
   </ItemGroup>
 
